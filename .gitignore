@@ -1,0 +1,22 @@
+
+# Ignore virtual environment
+venv/
+
+# Ignore generated audio files
+generated_audio/
+
+# Ignore temporary files
+*.tmp
+*.log
+*.cache
+*.pyc
+__pycache__/
+
+# Ignore editor and OS-specific files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Ignore requirements regeneration tools
+pipreqs.log
