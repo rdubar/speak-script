@@ -1,5 +1,5 @@
 
-# Speak Script: gh auth loginWorkout Audio Script Generator
+# Speak Script: Workout Audio Script Generator
 
 This Python project generates audio workout scripts with options for text-to-speech synthesis, silent mode, and customizable gaps. It supports both online (`gTTS`) and offline (`pyttsx3`) text-to-speech engines.
 
@@ -146,4 +146,4 @@ Run the script with sample inputs and ensure that:
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+This project is licensed under the [MIT License](https://opensource.org/license/mit).
