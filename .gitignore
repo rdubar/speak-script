@@ -12,6 +12,10 @@ generated_audio/
 *.pyc
 __pycache__/
 
+# ignore generated files
+*.wav
+*.mp3
+
 # Ignore editor and OS-specific files
 .DS_Store
 Thumbs.db

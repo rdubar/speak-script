@@ -7,9 +7,7 @@ import re
 import pyttsx3
 import tempfile
 from pathlib import Path
-import shutil
 from pydub import AudioSegment
-from pydub.generators import Sine
 
 DEFAULT_WORDS_PER_MINUTE = 120
 
@@ -68,13 +66,58 @@ def configure_pyttsx3(rate):
 
 def generate_silent_audio(duration, output_file):
     """Generate a silent audio file for the specified duration."""
-    print(f"Generating silent gap audio: {duration} seconds")
-    silent_audio = AudioSegment.silent(duration=duration * 1000)  # duration in ms
-    silent_audio.export(output_file, format="mp3")
+    if not os.path.exists(output_file):
+        silent_audio = AudioSegment.silent(duration=duration * 1000)  # duration in ms
+        silent_audio.export(output_file, format="mp3")
+        print(f"Generated silent audio for {duration} seconds: {output_file}")
+    else:
+        print(f"Reusing existing silent audio for {duration} seconds: {output_file}")
+
+def generate_tts_audio(line, output_file, local, engine=None):
+    """Generate TTS audio for a line."""
+    if not os.path.exists(output_file):
+        print(f"Generating audio: {line}")
+        if not local:
+            for attempt in range(3):
+                try:
+                    tts = gTTS(text=line, lang="en")
+                    tts.save(output_file)
+                    break
+                except Exception as e:
+                    print(f"Error generating TTS for line '{line}': {e}")
+                    if attempt == 2:
+                        raise
+        else:
+            engine.save_to_file(line, output_file)
+            engine.runAndWait()
+    else:
+        print(f"Reusing existing audio for: {line}")
+
+def combine_audio_files(input_folder, output_file):
+    """Combine all generated audio files into one."""
+    audio_files = sorted(
+        [f for f in os.listdir(input_folder) if f.endswith(".mp3")]
+    )
+
+    if not audio_files:
+        print("No audio files found to combine.")
+        return False
+
+    print("Combining the following files:")
+    combined_audio = AudioSegment.empty()
+
+    for file in audio_files:
+        print(f"  - {file}")
+        file_path = os.path.join(input_folder, file)
+        audio_segment = AudioSegment.from_file(file_path)
+        combined_audio += audio_segment
+
+    combined_audio.export(output_file, format="mp3")
+    print(f"Combined audio saved as: {output_file}")
+    return True
 
 def generate_audio(script, countdown, local, rate, silent):
     start_time = time.time()
-    total_size = 0
     output_folder = tempfile.mkdtemp(prefix="generated_audio_")
 
     print(f"Temporary files will be stored in: {output_folder}")
@@ -84,61 +127,31 @@ def generate_audio(script, countdown, local, rate, silent):
         if local:
             engine = configure_pyttsx3(rate)
 
-        output_files = []
-
         for idx, line in enumerate(script):
-            # Strip and skip empty lines
             line = line.strip()
             if not line:
-                continue  # Skip processing for empty lines
+                continue
 
-            # Handle `[Gap: X seconds]` markers explicitly
             if line.startswith("[Gap:"):
                 match = re.match(r"\[Gap:\s*(\d+)\s*seconds\]", line)
                 if match:
                     gap_duration = int(match.group(1))
-                    gap_file = os.path.join(output_folder, f"gap_{idx}.mp3")
+                    gap_file = os.path.join(output_folder, f"gap_{gap_duration}.mp3")
                     generate_silent_audio(gap_duration, gap_file)
-                    output_files.append(gap_file)
-                continue  # Skip further processing for this line
+                continue
 
-            # Generate audio file
-            filename = os.path.join(output_folder, f"audio_{idx}.mp3")
-            print(f"Generating: {line}")
-
-            if not local:
-                # Online TTS with gTTS
-                for attempt in range(3):
-                    try:
-                        tts = gTTS(text=line, lang="en")
-                        tts.save(filename)
-                        break  # Exit retry loop if successful
-                    except Exception as e:
-                        print(f"Error generating TTS for line '{line}': {e}")
-                        if attempt == 2:  # Retry up to 3 times
-                            raise
-            else:
-                # Offline TTS with pyttsx3
-                engine.save_to_file(line, filename)
-                engine.runAndWait()
-
-            output_files.append(filename)
-            total_size += os.path.getsize(filename)
+            audio_file = os.path.join(output_folder, f"audio_{hash(line)}.mp3")
+            generate_tts_audio(line, audio_file, local, engine)
 
             if not silent:
-                # Play the audio file if not in silent mode
-                playsound.playsound(filename)
+                playsound.playsound(audio_file)
 
-        # Calculate and display total time and file size
-        end_time = time.time()
-        total_time = end_time - start_time
-        print("\n--- Generation Complete ---")
-        print(f"Output Folder: {output_folder}")
-        print(f"Total Time: {time.strftime('%H:%M:%S', time.gmtime(total_time))}")
-        print(f"Total Size: {total_size / (1024 ** 2):.2f} MB")
-        print("Generated Files:")
-        for file in output_files:
-            print(file)
+        final_audio_path = os.path.join(os.getcwd(), "final_workout_audio.mp3")
+        if combine_audio_files(output_folder, final_audio_path):
+            print(f"Final combined audio file saved at: {final_audio_path}")
+
+        total_time = time.time() - start_time
+        print(f"Total generation time: {time.strftime('%H:%M:%S', time.gmtime(total_time))}")
 
     except Exception as e:
         print(f"Error during audio generation: {e}")

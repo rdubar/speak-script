@@ -1,14 +1,15 @@
 
 # Speak Script: Workout Audio Script Generator
 
-This Python project generates audio workout scripts with options for text-to-speech synthesis, silent mode, and customizable gaps. It supports both online (`gTTS`) and offline (`pyttsx3`) text-to-speech engines.
+This Python project generates audio workout scripts with options for text-to-speech synthesis, silent mode, and customizable gaps. It supports both online (`gTTS`) and offline (`pyttsx3`) text-to-speech engines. Duplicate audio or gaps are not recreated, ensuring efficient file generation.
 
 ## Features
 
 - Generate workout audio scripts from a text file.
 - Create silent gaps as audio files without real-time waiting.
-- Choose between online and offline TTS options.
-- Save generated audio files to a temporary directory.
+- Avoid duplicate audio generation using content-based file identification.
+- Combine all generated audio files into a single final audio file.
+- Choose between online (`gTTS`) and offline (`pyttsx3`) TTS options.
 - Display total audio duration and file size after generation.
 
 ## Requirements
@@ -45,10 +46,6 @@ This project requires:
    ```
 
 5. **Install Dependencies**:
-   - Generate the `requirements.txt` file using `pipreqs` if needed:
-     ```bash
-     pipreqs /path/to/your/project --force
-     ```
    - Install all required Python packages:
      ```bash
      pip install -r requirements.txt
@@ -98,6 +95,22 @@ python speak_script.py [OPTIONS]
    ```bash
    python speak_script.py
    ```
+
+## Key Features Added
+
+1. **Avoid Duplicate Audio**:
+   - Audio files are identified by their content (hashed filenames for TTS and duration-based filenames for silent gaps).
+   - Already existing audio is reused.
+
+2. **Final Audio File**:
+   - Combines all generated audio files into a single output (`final_workout_audio.mp3`).
+   - Saved in the directory where the script is executed.
+
+3. **Silent Gaps**:
+   - Gaps are pre-generated as silent audio files, skipping real-time waiting.
+
+4. **Performance**:
+   - Efficiently processes and reuses audio, saving time and storage space.
 
 ## Troubleshooting
 
